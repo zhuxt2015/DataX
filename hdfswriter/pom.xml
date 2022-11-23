@@ -14,7 +14,7 @@
     <description>HdfsWriter提供了写入HDFS功能。</description>
     <packaging>jar</packaging>
     <properties>
-        <hive.version>1.1.1</hive.version>
+        <hive.version>2.1.1</hive.version>
         <hadoop.version>2.7.1</hadoop.version>
     </properties>
 
@@ -40,11 +40,6 @@
                     <groupId>org.slf4j</groupId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.aliyun.oss</groupId>
-            <artifactId>hadoop-aliyun</artifactId>
-            <version>2.7.2</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>

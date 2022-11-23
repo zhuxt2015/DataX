@@ -115,16 +115,20 @@ public class JobContainer extends AbstractContainer {
                 this.prepare();
                 LOG.info("jobContainer starts to do split ...");
                 this.totalStage = this.split();
-                LOG.info("jobContainer starts to do schedule ...");
-                this.schedule();
+                if (totalStage != 0) {
+                    LOG.info("jobContainer starts to do schedule ...");
+                    this.schedule();
+                }
+
                 LOG.debug("jobContainer starts to do post ...");
                 this.post();
 
                 LOG.debug("jobContainer starts to do postHandle ...");
                 this.postHandle();
                 LOG.info("DataX jobId [{}] completed successfully.", this.jobId);
-
-                this.invokeHooks();
+                if (totalStage != 0) {
+                    this.invokeHooks();
+                }
             }
         } catch (Throwable e) {
             LOG.error("Exception when job run", e);
@@ -393,6 +397,9 @@ public class JobContainer extends AbstractContainer {
         List<Configuration> readerTaskConfigs = this
                 .doReaderSplit(this.needChannelNumber);
         int taskNumber = readerTaskConfigs.size();
+        if (taskNumber == 0) {
+            return taskNumber;
+        }
         List<Configuration> writerTaskConfigs = this
                 .doWriterSplit(taskNumber);
 
@@ -731,10 +738,13 @@ public class JobContainer extends AbstractContainer {
                 PluginType.READER, this.readerPluginName));
         List<Configuration> readerSlicesConfigs =
                 this.jobReader.split(adviceNumber);
-        if (readerSlicesConfigs == null || readerSlicesConfigs.size() <= 0) {
+        if (readerSlicesConfigs == null) {
             throw DataXException.asDataXException(
                     FrameworkErrorCode.PLUGIN_SPLIT_ERROR,
-                    "reader切分的task数目不能小于等于0");
+                    "reader切分的task数目不能为空");
+        }
+        if (readerSlicesConfigs.size() == 0) {
+            return readerSlicesConfigs;
         }
         LOG.info("DataX Reader.Job [{}] splits to [{}] tasks.",
                 this.readerPluginName, readerSlicesConfigs.size());

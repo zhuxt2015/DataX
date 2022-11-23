@@ -25,11 +25,12 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.mapred.*;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.parquet.schema.OriginalType;
+import org.apache.parquet.schema.PrimitiveType;
+import org.apache.parquet.schema.Types;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import parquet.schema.OriginalType;
-import parquet.schema.PrimitiveType;
-import parquet.schema.Types;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -209,6 +210,22 @@ public  class HdfsHelper {
             throw DataXException.asDataXException(HdfsWriterErrorCode.CONNECT_HDFS_IO_ERROR, e);
         }
         LOG.info(String.format("finish delete tmp dir [%s] .",path.toString()));
+    }
+
+    /**
+     * 创建目录
+     * @param path
+     */
+    public void createDir(Path path){
+        LOG.info(String.format("start create dir [%s] .",path.toString()));
+        try {
+            fileSystem.mkdirs(path);
+        } catch (Exception e) {
+            String message = String.format("创建目录[%s]时发生IO异常,请检查您的网络是否正常！", path.toString());
+            LOG.error(message);
+            throw DataXException.asDataXException(HdfsWriterErrorCode.CONNECT_HDFS_IO_ERROR, e);
+        }
+        LOG.info(String.format("finish create dir [%s] .",path.toString()));
     }
 
     public void renameFile(HashSet<String> tmpFiles, HashSet<String> endFiles){

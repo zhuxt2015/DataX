@@ -11,9 +11,10 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.apache.hadoop.fs.Path;
+import org.apache.parquet.schema.MessageTypeParser;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import parquet.schema.MessageTypeParser;
 
 import java.util.*;
 
@@ -149,6 +150,10 @@ public class HdfsWriter extends Writer {
 
         @Override
         public void prepare() {
+            //若目录不存在,创建目录
+            if (!hdfsHelper.isPathexists(path)) {
+                hdfsHelper.createDir(new Path(path));
+            }
             //若路径已经存在，检查path是否是目录
             if(hdfsHelper.isPathexists(path)){
                 if(!hdfsHelper.isPathDir(path)){

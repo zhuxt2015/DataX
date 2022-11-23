@@ -181,8 +181,9 @@ public class HdfsReader extends Reader {
             // int splitNumber = adviceNumber;
             int splitNumber = this.sourceFiles.size();
             if (0 == splitNumber) {
-                throw DataXException.asDataXException(HdfsReaderErrorCode.EMPTY_DIR_EXCEPTION,
-                        String.format("未能找到待读取的文件,请确认您的配置项path: %s", this.readerOriginConfig.getString(Key.PATH)));
+                return readerSplitConfigs;
+//                throw DataXException.asDataXException(HdfsReaderErrorCode.EMPTY_DIR_EXCEPTION,
+//                        String.format("未能找到待读取的文件,请确认您的配置项path: %s", this.readerOriginConfig.getString(Key.PATH)));
             }
 
             List<List<String>> splitedSourceFiles = this.splitSourceFiles(new ArrayList<String>(this.sourceFiles), splitNumber);

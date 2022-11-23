@@ -167,8 +167,12 @@ public class DFSUtil {
                 LOG.info(String.format("[%s] 是目录, 递归获取该目录下的文件", f.getPath().toString()));
                 getHDFSAllFilesNORegex(f.getPath().toString(), hdfs);
             } else if (f.isFile()) {
-
-                addSourceFileByType(f.getPath().toString());
+                if (f.getLen() == 0) {
+                    String message = String.format("文件[%s]长度为0，将会跳过不作处理！", f.getPath().toString());
+                    LOG.warn(message);
+                } else {
+                    addSourceFileByType(f.getPath().toString());
+                }
             } else {
                 String message = String.format("该路径[%s]文件类型既不是目录也不是文件，插件自动忽略。",
                         f.getPath().toString());
@@ -331,26 +335,32 @@ public class DFSUtil {
                 //If the network disconnected, will retry 45 times, each time the retry interval for 20 seconds
                 //Each file as a split
                 //TODO multy threads
+                // OrcInputFormat getSplits params numSplits not used, splits size = block numbers
                 InputSplit[] splits = in.getSplits(conf, 1);
+                RecordReader reader = null;
+                for (InputSplit split: splits) {
+                    reader = in.getRecordReader(split, conf, Reporter.NULL);
+                    Object key = reader.createKey();
+                    Object value = reader.createValue();
+                    // 获取列信息
+                    List<? extends StructField> fields = inspector.getAllStructFieldRefs();
 
-                RecordReader reader = in.getRecordReader(splits[0], conf, Reporter.NULL);
-                Object key = reader.createKey();
-                Object value = reader.createValue();
-                // 获取列信息
-                List<? extends StructField> fields = inspector.getAllStructFieldRefs();
+                    List<Object> recordFields;
+                    while (reader.next(key, value)) {
+                        recordFields = new ArrayList<Object>();
 
-                List<Object> recordFields;
-                while (reader.next(key, value)) {
-                    recordFields = new ArrayList<Object>();
+                        for (int i = 0; i <= columnIndexMax; i++) {
+                            Object field = inspector.getStructFieldData(value, fields.get(i));
+                            recordFields.add(field);
+                        }
+                        transportOneRecord(column, recordFields, recordSender,
+                                taskPluginCollector, isReadAllColumns, nullFormat);
+                        }
 
-                    for (int i = 0; i <= columnIndexMax; i++) {
-                        Object field = inspector.getStructFieldData(value, fields.get(i));
-                        recordFields.add(field);
                     }
-                    transportOneRecord(column, recordFields, recordSender,
-                            taskPluginCollector, isReadAllColumns, nullFormat);
-                }
-                reader.close();
+                    if (reader != null) {
+                        reader.close();
+                    }
             } catch (Exception e) {
                 String message = String.format("从orcfile文件路径[%s]中读取数据发生异常，请联系系统管理员。"
                         , sourceOrcFilePath);
